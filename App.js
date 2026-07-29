@@ -86,7 +86,7 @@ export default function App() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🤖 ChatBot AI Sandi Kampus</Text>
-        <Text style={styles.headerSubtitle}>Online | Ready to help - Sandi Copyright © 2026</Text>
+        <Text style={styles.headerSubtitle}>Online | Ready to help - Copyright©2026</Text>
       </View>
 
       {/* Container utama chat */}
