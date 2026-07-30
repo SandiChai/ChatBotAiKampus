@@ -15,6 +15,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
+import {postChatText, postChatFile} from './API/chatBotService';
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -32,11 +33,10 @@ export default function App() {
 
   const flatListRef = useRef(null);
 
-  // 1. Fungsi untuk Memilih File / Gambar
   const handlePickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*', // Bisa diganti 'image/*' jika hanya ingin gambar
+        type: '*/*', 
         copyToCacheDirectory: true,
       });
 
@@ -54,8 +54,7 @@ export default function App() {
     }
   };
 
-  // 2. Fungsi Kirim Pesan (Termasuk File jika ada)
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim() && !selectedFile) return;
 
     const userMessage = {
@@ -74,26 +73,66 @@ export default function App() {
     setSelectedFile(null);
     setIsTyping(true);
 
-    // Simulasi Jawaban Bot
-    setTimeout(() => {
-      let replyText = `Ini adalah respon otomatis untuk: "${currentPrompt}"`;
-      if (attachedFile) {
-        replyText += `\n\n📄 File diterima: ${attachedFile.name}`;
-      }
+    let replyText = ``;
+    
+    if(attachedFile){
+      await postChatFile(currentPrompt, attachedFile).then(async (jsonChatResponse) => {
+        if (jsonChatResponse) {
+            replyText = jsonChatResponse.result;
+            
+            const botResponse = {
+              id: (Date.now() + 1).toString(),
+              text: replyText,
+              sender: 'bot',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
 
-      const botResponse = {
-        id: (Date.now() + 1).toString(),
-        text: replyText,
-        sender: 'bot',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+            setMessages((prev) => [...prev, botResponse]);
+            setIsTyping(false);
+        } else {
+            replyText = `Mohon Maaf, service chatbot sedang tidak available saat ini`;
+            const botResponse = {
+              id: (Date.now() + 1).toString(),
+              text: replyText,
+              sender: 'bot',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
 
-      setMessages((prev) => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1200);
+            setMessages((prev) => [...prev, botResponse]);
+            setIsTyping(false);
+        }
+      });
+    }else{
+      await postChatText(currentPrompt).then(async (jsonChatResponse) => {
+        if (jsonChatResponse) {
+            replyText = jsonChatResponse.result;
+            
+            const botResponse = {
+              id: (Date.now() + 1).toString(),
+              text: replyText,
+              sender: 'bot',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+
+            setMessages((prev) => [...prev, botResponse]);
+            setIsTyping(false);
+        } else {
+            replyText = `Mohon Maaf, service chatbot sedang tidak available saat ini`;
+            const botResponse = {
+              id: (Date.now() + 1).toString(),
+              text: replyText,
+              sender: 'bot',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+
+            setMessages((prev) => [...prev, botResponse]);
+            setIsTyping(false);
+        }
+      });
+    }
+    
   };
 
-  // 3. Render Item Chat (Bubble Message)
   const renderMessageItem = ({ item }) => {
     const isUser = item.sender === 'user';
     const isImage = item.file?.mimeType?.startsWith('image/');
@@ -101,7 +140,6 @@ export default function App() {
     return (
       <View style={[styles.messageRow, isUser ? styles.userRow : styles.botRow]}>
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
-          {/* Tampilan Attachment jika ada File */}
           {item.file && (
             <View style={styles.attachmentBox}>
               {isImage ? (
@@ -117,7 +155,6 @@ export default function App() {
             </View>
           )}
 
-          {/* Teks Pesan */}
           {item.text ? (
             <Text style={[styles.messageText, isUser ? styles.userText : styles.botText]}>
               {item.text}
@@ -136,13 +173,11 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🤖 ChatBot AI Sandi Kampus</Text>
         <Text style={styles.headerSubtitle}>Online | Ready to help - Copyright©2026</Text>
       </View>
 
-      {/* Container Chat */}
       <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -164,7 +199,6 @@ export default function App() {
           </View>
         )}
 
-        {/* Preview File yang dipilih sebelum dikirim */}
         {selectedFile && (
           <View style={styles.previewContainer}>
             <Ionicons name="document-text-outline" size={20} color="#0084ff" />
@@ -177,9 +211,7 @@ export default function App() {
           </View>
         )}
 
-        {/* Input Bar */}
         <View style={styles.inputContainer}>
-          {/* Tombol Plus (+) */}
           <TouchableOpacity style={styles.plusButton} onPress={handlePickDocument}>
             <Ionicons name="add" size={24} color="#0084ff" />
           </TouchableOpacity>

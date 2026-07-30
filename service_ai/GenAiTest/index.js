@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from 'express';
 import multer from 'multer';
+import cors from 'cors';
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -9,7 +10,15 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const GEMNI_MODEL = "gemini-3.5-flash-lite";
 
+app.use(cors({
+  origin: '*', // Mengizinkan request dari mana saja (localhost, Netlify, dll)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'ngrok-skip-browser-warning'],
+  credentials: true,
+}));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const PORT = 3000;
 app.listen(PORT, () => {
@@ -37,10 +46,27 @@ app.post('/generate-text', async (req, res)=>{
 })
 
 app.post("/generate-from-image", upload.single("fileUpload"), async (req, res) =>{
-    const { prompt } = req.body;
-    const base64Document = req.file.buffer.toString("base64");
-
+   
     try{
+        console.log("--> Request Masuk ke /generate-from-image");
+    
+        // 1. Cek Body Prompt
+        const prompt = req.body.prompt || "Jelaskan file atau gambar ini";
+        console.log("Prompt:", prompt);
+
+        // 2. Cek apakah ada file yang di-upload
+        if (!req.file) {
+            console.log("⚠️ Warning: req.file tidak ditemukan/kosong!");
+            return res.status(400).json({ 
+                error: "File tidak ditemukan dalam request. Pastikan field bernama 'fileUpload'." 
+            });
+        }
+        console.log("File Diterima:", req.file.originalname, "| MIME:", req.file.mimetype);
+
+        // Mengambil buffer
+        const base64Document = req.file.buffer.toString("base64");
+        const mimeType = req.file.mimetype;
+    
         const response = await ai.models.generateContent({
             model: GEMNI_MODEL,
             contents: [
