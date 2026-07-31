@@ -1,7 +1,7 @@
 import React from 'react';
 import clsSetting from '../API/clsSettings';
 
-exports.postChatText = async (_prompt) => {
+exports.postChatText = async (_prompt, _tempIndex) => {
   return fetch(clsSetting.APIUrl + "generate-text", {
     method: 'POST',
     headers: {
@@ -11,6 +11,7 @@ exports.postChatText = async (_prompt) => {
     },
     body: JSON.stringify({
       prompt: _prompt || "", 
+      tempIndex: _tempIndex || "", 
     }),
   })
     .then(function (response) {
@@ -31,9 +32,10 @@ exports.postChatText = async (_prompt) => {
 };
 
 
-exports.postChatFile = async (_prompt, _fileUpload) => {
+exports.postChatFile = async (_prompt, _fileUpload, _tempIndex) => {
   var formData = new FormData();
   formData.append("prompt", _prompt || "");
+  formData.append("tempIndex", _tempIndex);
 
   if (_fileUpload) {
     if (_fileUpload.file instanceof File || _fileUpload.file instanceof Blob) {

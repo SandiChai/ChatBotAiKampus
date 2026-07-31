@@ -16,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
 import {postChatText, postChatFile} from './API/chatBotService';
+import Slider from '@react-native-community/slider';
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -30,7 +31,7 @@ export default function App() {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-
+  const [temperature, setTemperature] = useState(0.2);
   const flatListRef = useRef(null);
 
   const handlePickDocument = async () => {
@@ -75,8 +76,10 @@ export default function App() {
 
     let replyText = ``;
     
+    console.log("App.js TEMP : " + temperature);
+
     if(attachedFile){
-      await postChatFile(currentPrompt, attachedFile).then(async (jsonChatResponse) => {
+      await postChatFile(currentPrompt, attachedFile, temperature).then(async (jsonChatResponse) => {
         if (jsonChatResponse) {
             replyText = jsonChatResponse.result;
             
@@ -103,7 +106,7 @@ export default function App() {
         }
       });
     }else{
-      await postChatText(currentPrompt).then(async (jsonChatResponse) => {
+      await postChatText(currentPrompt, temperature).then(async (jsonChatResponse) => {
         if (jsonChatResponse) {
             replyText = jsonChatResponse.result;
             
@@ -182,6 +185,35 @@ export default function App() {
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+
+        <View style={styles.temperatureContainer}>
+          <View style={styles.tempHeaderRow}>
+            <Text style={styles.tempTitle}>1 MODEL • 1 PERTANYAAN • <Text style={styles.highlightText}>PARAMETER BERBEDA</Text></Text>
+          </View>
+
+          <View style={styles.sliderControlRow}>
+            <Text style={styles.tempLabel}>temperature</Text>
+            <Text style={styles.tempValueText}>{temperature.toFixed(1)}</Text>
+          </View>
+
+          <Slider
+            style={styles.sliderStyle}
+            minimumValue={0.0}
+            maximumValue={2.0}
+            step={0.1}
+            value={temperature}
+            onValueChange={(val) => setTemperature(val)}
+            minimumTrackTintColor="#f97316"
+            maximumTrackTintColor="#334155"
+            thumbTintColor="#f97316"
+          />
+
+          <View style={styles.sliderLabelsRow}>
+            <Text style={styles.subLabel}>presisi</Text>
+            <Text style={styles.subLabel}>kreatif</Text>
+          </View>
+        </View>
+
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -247,6 +279,25 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: 'bold' },
   headerSubtitle: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
   chatContainer: { flex: 1, maxWidth: 800, width: '100%', alignSelf: 'center' },
+  temperatureContainer: {
+    backgroundColor: '#1e293b',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  tempHeaderRow: { alignItems: 'center', marginBottom: 10 },
+  tempTitle: { fontSize: 10, color: '#94a3b8', fontWeight: 'bold', letterSpacing: 0.5 },
+  highlightText: { color: '#38bdf8' },
+  sliderControlRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  tempLabel: { color: '#cbd5e1', fontSize: 13, fontWeight: '500' },
+  tempValueText: { color: '#f97316', fontSize: 15, fontWeight: 'bold' },
+  sliderStyle: { width: '100%', height: 30 },
+  sliderLabelsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -2 },
+  subLabel: { color: '#64748b', fontSize: 11 },
   listContent: { paddingHorizontal: 16, paddingVertical: 12 },
   messageRow: { marginVertical: 4, flexDirection: 'row' },
   userRow: { justifyContent: 'flex-end' },
