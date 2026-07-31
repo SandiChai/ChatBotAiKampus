@@ -8,7 +8,7 @@ const app = express();
 const upload = multer();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const GEMNI_MODEL = "gemini-3.5-flash-lite";
+const GEMNI_MODEL = "gemini-3.5-flash";
 
 app.use(cors({
   origin: '*', // Mengizinkan request dari mana saja (localhost, Netlify, dll)
@@ -44,8 +44,8 @@ app.post('/generate-text', async (req, res)=>{
             model: GEMNI_MODEL,
             contents: prompt,
             config:{
-                temperature: tempIndex,
-                systemInstruction: "Jawab hanya menggunakan bahasa Indonesia."
+                temperature: parseFloat(tempIndex),
+                systemInstruction: "Jawab menggunakan bahasa Indonesia. Jika temperature rendah, gunakan gaya bahasa yang singkat, padat, dan langsung ke inti."
             },
         });
 
@@ -90,8 +90,8 @@ app.post("/generate-from-image", upload.single("fileUpload"), async (req, res) =
                 {inlineData: {data: base64Document, mimeType: req.file.mimetype}}
             ],
             config:{
-                temperature: tempIndex,
-                systemInstruction: "Jawab hanya menggunakan bahasa Indonesia."
+                temperature: parseFloat(tempIndex),
+                systemInstruction: "Jawab menggunakan bahasa Indonesia. Jika temperature rendah, gunakan gaya bahasa yang singkat, padat, dan langsung ke inti."
             },
         });
 
